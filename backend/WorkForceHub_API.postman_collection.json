@@ -1,0 +1,1007 @@
+{
+	"info": {
+		"_postman_id": "workforcehub-api-v1",
+		"name": "WorkForceHub API",
+		"description": "HR Management System API - WorkForceHub Backend. Base URL: {{base_url}}. Use Login request then set collection variable `access_token` from response, or use Bearer token in Authorization.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8080" },
+		{ "key": "access_token", "value": "" }
+	],
+	"item": [
+		{
+			"name": "Health & Info",
+			"description": "Root and health check endpoints (no auth).",
+			"item": [
+				{
+					"name": "Root",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/",
+						"description": "API info and docs link."
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/health",
+						"description": "Health check for load balancers / monitoring."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"description": "Sign up, login, set password, and current user. Login uses form-data; others use JSON where applicable.",
+			"item": [
+				{
+					"name": "Signup",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"company_name\": \"Acme Inc\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/auth/signup",
+						"description": "Create account: first name, last name, company, email, password."
+					},
+					"response": []
+				},
+				{
+					"name": "Register (internal)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"johndoe\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"employee\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/auth/register",
+						"description": "Register with username and role (internal use)."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var json = pm.response.json();",
+									"if (json.success && json.data && json.data.access_token) {",
+									"  pm.collectionVariables.set('access_token', json.data.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "username", "value": "admin", "type": "text" },
+								{ "key": "password", "value": "your_password", "type": "text" },
+								{ "key": "remember_me", "value": "false", "type": "text" }
+							]
+						},
+						"url": "{{base_url}}/api/v1/auth/login",
+						"description": "Login with username (or email) and password. Use remember_me=true for longer session. Saves access_token to collection variable if test runs."
+					},
+					"response": []
+				},
+				{
+					"name": "Set Password",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"token-from-email-link\",\n  \"new_password\": \"NewSecurePass123!\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/auth/set-password",
+						"description": "Set password using token from admin-created user email."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User (Me)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/auth/me",
+						"description": "Get current authenticated user info."
+					},
+					"response": []
+				},
+				{
+					"name": "Test Email (Super Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{base_url}}/api/v1/auth/test-email?to_email=admin@example.com",
+						"description": "Send test email for SMTP debugging. Super admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Google Auth",
+			"description": "Google OAuth status and token exchange (for SPA).",
+			"item": [
+				{
+					"name": "Google OAuth Status",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/auth/google/status",
+						"description": "Check if Google OAuth is configured."
+					},
+					"response": []
+				},
+				{
+					"name": "Google Token Exchange",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"google-auth-code-from-frontend\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/auth/google/token?code=GOOGLE_CODE_HERE",
+						"description": "Exchange Google OAuth code for JWT. Pass code as query param or in body if API accepts."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"description": "Super admin only: create user/employee (sends set-password email).",
+			"item": [
+				{
+					"name": "Create User (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newuser@company.com\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\",\n  \"company_name\": \"Acme Inc\",\n  \"designation\": \"Developer\",\n  \"department\": \"Engineering\",\n  \"phone\": \"+1234567890\",\n  \"date_of_joining\": \"2025-01-15\",\n  \"probation_months\": 3\n}"
+						},
+						"url": "{{base_url}}/api/v1/admin/users",
+						"description": "Admin creates user; set-password link sent to email."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"description": "Role-aware: admin gets org stats, employee gets personal stats.",
+			"item": [
+				{
+					"name": "Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/summary",
+						"description": "Summary: admin = org stats; employee = personal (checked_in_today, leave_balance, etc.)."
+					},
+					"response": []
+				},
+				{
+					"name": "Dashboard Analytics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/analytics",
+						"description": "Charts data: leave by type, headcount. Admin/team_lead only."
+					},
+					"response": []
+				},
+				{
+					"name": "Card - Employees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/card/employees",
+						"description": "List all active employees for dashboard. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Card - Present Today",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/card/present-today",
+						"description": "Employees checked in and not checked out today. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Card - On Leave Today",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/card/on-leave-today",
+						"description": "Employees on approved leave today. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Card - Pending Leaves",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/card/pending-leaves",
+						"description": "Pending leave requests. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Card - Teams",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/card/teams",
+						"description": "All teams for dashboard. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Card - Documents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/card/documents",
+						"description": "Recent documents for dashboard. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Alerts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/dashboard/alerts",
+						"description": "Probation ending soon, work anniversaries. Role-filtered."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Employees",
+			"description": "Employee CRUD, list with filters, and self profile (me).",
+			"item": [
+				{
+					"name": "List Employees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/employees?page=1&page_size=10&search=&team_id=&team_name=&designation=&status=active",
+							"host": [ "{{base_url}}" ],
+							"path": [ "api", "v1", "employees" ],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "page_size", "value": "10" },
+								{ "key": "search", "value": "" },
+								{ "key": "team_id", "value": "" },
+								{ "key": "team_name", "value": "" },
+								{ "key": "designation", "value": "" },
+								{ "key": "status", "value": "active" }
+							]
+						},
+						"description": "Paginated list. Filters: search, team_id, team_name, designation, status (active|inactive)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Employee",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": 1,\n  \"employee_id\": \"EMP0001\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"company_name\": \"Acme\",\n  \"date_of_joining\": \"2025-01-01\",\n  \"designation\": \"Developer\",\n  \"department\": \"Engineering\",\n  \"team_id\": 1\n}"
+						},
+						"url": "{{base_url}}/api/v1/employees",
+						"description": "Create employee. Super admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/employees/me",
+						"description": "Current user's employee profile."
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"method": "PUT",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+1234567890\",\n  \"personal_email\": \"personal@example.com\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+0987654321\",\n  \"cnic\": \"12345-1234567-1\",\n  \"address\": \"123 Street\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/employees/me",
+						"description": "Employee updates own personal info (CNIC, emergency contact, etc.)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/employees/1",
+						"description": "Get employee by primary key ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Employee",
+					"request": {
+						"method": "PUT",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"designation\": \"Senior Developer\",\n  \"team_id\": 1,\n  \"is_active\": true\n}"
+						},
+						"url": "{{base_url}}/api/v1/employees/1",
+						"description": "Update employee. Admin or team lead."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete (Deactivate) Employee",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{base_url}}/api/v1/employees/1",
+						"description": "Soft delete (is_active=false). Purged after 30 days. Super admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Teams",
+			"description": "Team CRUD and team members. Employees see only their team.",
+			"item": [
+				{
+					"name": "List Teams",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/teams",
+						"description": "All teams for admin; only own team for employee."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Team",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Engineering\",\n  \"description\": \"Software development\",\n  \"team_lead_id\": 1\n}"
+						},
+						"url": "{{base_url}}/api/v1/teams",
+						"description": "Create team. Super admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Team",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/teams/1",
+						"description": "Get team by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Team Members",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/teams/1/members",
+						"description": "List active members of team. Employees may only view own team."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Team",
+					"request": {
+						"method": "PUT",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Engineering\",\n  \"description\": \"Updated description\",\n  \"team_lead_id\": 2\n}"
+						},
+						"url": "{{base_url}}/api/v1/teams/1",
+						"description": "Update team. Super admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Team",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{base_url}}/api/v1/teams/1",
+						"description": "Delete team. Super admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Attendance",
+			"description": "Check-in, check-out, history, all (admin), and overtime.",
+			"item": [
+				{
+					"name": "Check In",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"is_late\": false\n}"
+						},
+						"url": "{{base_url}}/api/v1/attendance/check-in",
+						"description": "Employee check-in for today."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Out",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": { "mode": "raw", "raw": "{}" },
+						"url": "{{base_url}}/api/v1/attendance/check-out",
+						"description": "Employee check-out for today's attendance."
+					},
+					"response": []
+				},
+				{
+					"name": "Attendance History (My)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/attendance/history?start_date=&end_date=",
+						"description": "Current user's attendance history. Optional start_date, end_date."
+					},
+					"response": []
+				},
+				{
+					"name": "All Attendance (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/attendance/all?employee_id=&start_date=&end_date=",
+						"description": "All attendance records. Admin/team_lead. Filter by employee_id, start_date, end_date."
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Overtime",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"date\": \"2025-02-24\",\n  \"start_time\": \"2025-02-24T17:00:00\",\n  \"end_time\": \"2025-02-24T21:00:00\",\n  \"notes\": \"Project deadline\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/attendance/overtime",
+						"description": "Submit overtime request (date, start_time, end_time, notes)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Leave",
+			"description": "Apply leave, balance, my requests, admin requests, approve/reject.",
+			"item": [
+				{
+					"name": "Apply Leave",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"leave_type\": \"annual\",\n  \"start_date\": \"2025-03-01\",\n  \"end_date\": \"2025-03-03\",\n  \"reason\": \"Family trip\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/leave/apply",
+						"description": "Apply for leave. leave_type: annual, sick, casual."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Leave Balance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/leave/balance",
+						"description": "Current user's leave balance (annual, sick, casual remaining)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Leave Balance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/leave/balance/1",
+						"description": "Leave balance for employee ID. Admin/team_lead only."
+					},
+					"response": []
+				},
+				{
+					"name": "My Leave Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/leave/my-requests",
+						"description": "Current user's leave requests."
+					},
+					"response": []
+				},
+				{
+					"name": "List Leave Requests (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/leave/requests?status_filter=pending",
+						"description": "All leave requests. Admin/team_lead. status_filter: pending, approved, rejected."
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Leave",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{base_url}}/api/v1/leave/1/approve",
+						"description": "Approve leave request. Admin/team_lead."
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Leave",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{base_url}}/api/v1/leave/1/reject?rejection_reason=Insufficient%20coverage",
+						"description": "Reject leave with reason. Admin/team_lead."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Documents",
+			"description": "Upload, list, expiring soon, get, download. Company policy requires admin.",
+			"item": [
+				{
+					"name": "Upload Document",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "file", "type": "file", "src": "" },
+								{ "key": "category_id", "value": "", "type": "text" },
+								{ "key": "is_company_policy", "value": "false", "type": "text" },
+								{ "key": "description", "value": "", "type": "text" },
+								{ "key": "expiry_date", "value": "", "type": "text", "description": "YYYY-MM-DD" }
+							]
+						},
+						"url": "{{base_url}}/api/v1/documents/upload",
+						"description": "Upload file. Allowed: pdf, doc, docx, xls, xlsx, txt, jpg, jpeg, png. is_company_policy=true needs admin."
+					},
+					"response": []
+				},
+				{
+					"name": "List Documents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/documents?is_company_policy=",
+						"description": "List documents. Employees see company policies + own; admin sees all."
+					},
+					"response": []
+				},
+				{
+					"name": "Expiring Soon",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/documents/expiring-soon?days=90",
+						"description": "Documents expiring within N days (default 90)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Document",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/documents/1",
+						"description": "Get document metadata by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload for Employee",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "file", "type": "file", "src": "" },
+								{ "key": "description", "value": "", "type": "text" }
+							]
+						},
+						"url": "{{base_url}}/api/v1/documents/upload-for-employee?employee_id=1",
+						"description": "Admin uploads document for a specific employee."
+					},
+					"response": []
+				},
+				{
+					"name": "Download Document",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/documents/1/download",
+						"description": "Download file. Returns file stream."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Letters",
+			"description": "HR letters: extract PDF, generate, request, resignation, approve/reject.",
+			"item": [
+				{
+					"name": "Extract PDF Text",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [ { "key": "file", "type": "file", "src": "" } ]
+						},
+						"url": "{{base_url}}/api/v1/letters/extract-pdf",
+						"description": "Extract text from PDF for use as template. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Letter",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"employee_id\": 1,\n  \"letter_type\": \"experience\",\n  \"title\": \"Experience Letter\",\n  \"content\": \"This is to certify that {{employee_name}} has worked with us from...\",\n  \"is_ai_generated\": false,\n  \"increment_amount\": null,\n  \"current_basic\": null,\n  \"current_gross\": null\n}"
+						},
+						"url": "{{base_url}}/api/v1/letters/generate",
+						"description": "Generate HR letter and send to employee email. letter_type: experience, recommendation, appreciation, increment, resignation. Use {{employee_name}} placeholder."
+					},
+					"response": []
+				},
+				{
+					"name": "Request Letter (Employee)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/request?letter_type=experience",
+						"description": "Employee requests experience or recommendation letter. letter_type: experience | recommendation."
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Resignation",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"I hereby submit my resignation effective from...\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/letters/submit-resignation",
+						"description": "Employee submits resignation letter content."
+					},
+					"response": []
+				},
+				{
+					"name": "My Letter Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/my-requests",
+						"description": "Current user's letter requests and status."
+					},
+					"response": []
+				},
+				{
+					"name": "List Letter Requests (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/requests?status_filter=pending",
+						"description": "All letter requests. Admin/team_lead."
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Letter Request",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/requests/1/complete",
+						"description": "Mark request as completed after generating letter. Admin."
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Letter Request",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/requests/1/reject",
+						"description": "Reject (resignation only). Admin."
+					},
+					"response": []
+				},
+				{
+					"name": "Accept Resignation Request",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/requests/1/accept",
+						"description": "Accept resignation: create letter, send email, mark completed. Admin."
+					},
+					"response": []
+				},
+				{
+					"name": "List Letters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters",
+						"description": "List letters. Employee sees own; admin sees all."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Letter",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/1",
+						"description": "Get letter by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Letter",
+					"request": {
+						"method": "PUT",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Experience Letter\",\n  \"content\": \"Updated content...\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/letters/1",
+						"description": "Update letter and resend to employee email. Admin."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Letter",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{base_url}}/api/v1/letters/1",
+						"description": "Delete letter. Admin only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payroll",
+			"description": "Create salary slip, upload PDF, list, get, download.",
+			"item": [
+				{
+					"name": "Create Payroll",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"employee_id\": 1,\n  \"month\": 2,\n  \"year\": 2025,\n  \"basic_salary\": 50000,\n  \"allowances\": 10000,\n  \"deductions\": 5000,\n  \"net_salary\": 55000\n}"
+						},
+						"url": "{{base_url}}/api/v1/payroll",
+						"description": "Create salary slip (no file). Net = basic + allowances - deductions if not provided."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Payroll PDF",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "employee_id", "value": "1", "type": "text" },
+								{ "key": "month", "value": "2", "type": "text" },
+								{ "key": "year", "value": "2025", "type": "text" },
+								{ "key": "currency", "value": "PKR", "type": "text" },
+								{ "key": "file", "type": "file", "src": "" },
+								{ "key": "basic_salary", "value": "", "type": "text" },
+								{ "key": "allowances", "value": "", "type": "text" },
+								{ "key": "deductions", "value": "", "type": "text" },
+								{ "key": "net_salary", "value": "", "type": "text" }
+							]
+						},
+						"url": "{{base_url}}/api/v1/payroll/upload",
+						"description": "Upload payroll PDF. currency required (e.g. USD, EUR, PKR)."
+					},
+					"response": []
+				},
+				{
+					"name": "List Payrolls",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/payroll?employee_id=&year=&month=",
+						"description": "List payrolls. Employee sees own; admin sees all. Optional filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payroll",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/payroll/1",
+						"description": "Get payroll by ID. Access by role."
+					},
+					"response": []
+				},
+				{
+					"name": "Download Payroll PDF",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/payroll/1/download",
+						"description": "Download salary slip PDF."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reports",
+			"description": "Export attendance (CSV), leave (XLSX), payroll (CSV). Admin/team_lead only.",
+			"item": [
+				{
+					"name": "Export Attendance (CSV)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/reports/attendance?start_date=&end_date=&employee_id=&employee_name=",
+						"description": "Download attendance as CSV. Optional: start_date, end_date, employee_id, employee_name."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Leave (XLSX)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/reports/leave?status_filter=&start_date=&end_date=&employee_id=&employee_name=",
+						"description": "Download leave requests as Excel. Optional filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Payroll (CSV)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/reports/payroll?year=&month=&employee_id=&employee_name=",
+						"description": "Download payroll as CSV. Optional: year, month, employee_id, employee_name."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Announcements",
+			"description": "Admin creates; all authenticated users can list.",
+			"item": [
+				{
+					"name": "List Announcements",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/v1/announcements",
+						"description": "List active announcements (limit 20)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Announcement",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Holiday Notice\",\n  \"message\": \"Office will be closed on Dec 25.\"\n}"
+						},
+						"url": "{{base_url}}/api/v1/announcements",
+						"description": "Create announcement. Admin/team_lead only."
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate Announcement",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{base_url}}/api/v1/announcements/1/deactivate",
+						"description": "Set is_active=false. Admin only."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

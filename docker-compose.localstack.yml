@@ -1,0 +1,29 @@
+# LocalStack for local S3 (e.g. document/payroll uploads) on Windows/Linux
+# Usage: docker compose -f docker-compose.localstack.yml up -d
+# S3 endpoint: http://localhost:4566 (from host) or http://localstack:4566 (from other containers)
+#
+# The init script automatically creates the workforcehub-uploads bucket on startup.
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: workforcehub-localstack
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      - SERVICES=s3
+      - DEBUG=0
+      - PERSISTENCE=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./scripts/localstack-init:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  localstack-data:
