@@ -10,6 +10,7 @@ import Documents from './pages/Documents'
 import Payroll from './pages/Payroll'
 import PersonalInfo from './pages/PersonalInfo'
 import Toast from './components/Toast'
+import SetPassword from './pages/SetPassword'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -34,6 +35,7 @@ function App() {
           <Route path="payroll" element={<Payroll />} />
           <Route path="personal" element={<PersonalInfo />} />
         </Route>
+        <Route path="/set-password" element={<SetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

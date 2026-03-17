@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Application
-    APP_NAME: str = "WorkForceHub"
+    APP_NAME: str = "LeaveHub"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     PORT: int = 8080
@@ -84,7 +84,7 @@ class Settings(BaseSettings):
     SMTP_USE_TLS: bool = False  # Port 465 uses implicit SSL, not STARTTLS
     SMTP_USE_SSL: bool = True   # Use SSL for port 465
     SMTP_FROM_EMAIL: str = ""
-    SMTP_FROM_NAME: str = "WorkForceHub"
+    SMTP_FROM_NAME: str = "LeaveHub"
     FRONTEND_URL: str = "http://localhost:5174"
     EMPLOYEE_PORTAL_URL: str = "http://localhost:5174/employee"
     # Dedicated company admin portal (per-tenant admin UI)

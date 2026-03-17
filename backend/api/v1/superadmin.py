@@ -185,7 +185,7 @@ async def create_company(
     if env == "production":
         base = getattr(settings, "BASE_DOMAIN", "workforcehub.com")
         tenant_url_employee = f"https://{slug}.{base}"
-        tenant_url_admin = f"https://{slug}-admin.{base}" if base else None
+        tenant_url_admin = f"https://{slug}.{base}/admin" if base else None
     else:
         tenant_url_employee = f"http://{slug}.localhost:5174"
         tenant_url_admin = f"http://{slug}.localhost:5176"

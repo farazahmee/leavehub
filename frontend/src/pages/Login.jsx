@@ -102,7 +102,7 @@ const Login = () => {
         <div className="max-w-md w-full space-y-6 p-8 bg-white/85 border border-slate-200 rounded-2xl shadow-[0_20px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl">
         <div>
           <h2 className="text-center text-3xl font-extrabold text-gray-900">
-            WorkForceHub
+            LeaveHub
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {mode === 'signin' ? 'Sign in to your account' : 'Create your account'}

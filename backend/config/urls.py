@@ -1,5 +1,5 @@
 """
-URL configuration for WorkForceHub project.
+URL configuration for LeaveHub project.
 """
 from django.contrib import admin
 from django.urls import path, include

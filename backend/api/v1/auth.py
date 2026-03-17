@@ -1,7 +1,9 @@
 """
 Authentication routes
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Form, Request
+import secrets
+from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -23,6 +25,8 @@ from core.responses import SuccessResponse, ErrorResponse
 from models.user import User, UserRole
 from schemas.auth import TokenResponse, UserCreate, UserResponse, SignUpCreate, SetPasswordRequest
 from models.employee import Employee
+from models.company import Company
+from core.config import settings
 from datetime import date, datetime, timezone
 
 router = APIRouter()
@@ -35,7 +39,7 @@ async def test_email(to_email: str, current_user: User = Depends(require_super_a
     from core.email import send_email
     success = send_email(
         to_email=to_email,
-        subject="WorkForceHub Test Email",
+        subject="LeaveHub Test Email",
         body_html="<p>If you receive this, SMTP is working.</p>",
         body_text="If you receive this, SMTP is working.",
     )
@@ -319,3 +323,53 @@ async def get_current_user_info(
         message="User information retrieved",
         data=UserResponse.from_user(user),
     )
+
+@router.post("/forgot-password", response_model=SuccessResponse)
+async def forgot_password(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    from pydantic import BaseModel
+    body = await request.json()
+    email = body.get("email", "").lower().strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    # Always return success to prevent email enumeration
+    if not user:
+        return SuccessResponse(message="If this email exists, a reset link has been sent.")
+
+    token = secrets.token_urlsafe(48)
+    expires = datetime.now(timezone.utc) + timedelta(hours=2)
+    user.password_reset_token = token
+    user.password_reset_expires = expires
+    await db.commit()
+
+    # Build reset URL based on user type and role
+    base = getattr(settings, "BASE_DOMAIN", "leavehub.io")
+    user_type = getattr(user, "user_type", None)
+    user_role = str(getattr(user, "role", "")).upper()
+    company = await db.get(Company, user.tenant_id) if user.tenant_id else None
+    slug = company.slug if company else None
+    if user_type == "platform_admin":
+        reset_url = f"https://{base}/set-password?token={token}"
+    elif user_role in ("SUPER_ADMIN", "TEAM_LEAD"):
+        reset_url = f"https://{base}/admin/set-password?token={token}"
+    else:
+        if slug:
+            reset_url = f"https://{slug}.{base}/set-password?token={token}"
+        else:
+            reset_url = f"https://{base}/set-password?token={token}"
+
+    from core.email import send_new_user_set_password
+    send_new_user_set_password(
+        to_email=user.email,
+        username=user.username or user.email,
+        first_name=user.email.split("@")[0],
+        set_password_url=reset_url,
+    )
+
+    return SuccessResponse(message="If this email exists, a reset link has been sent.")

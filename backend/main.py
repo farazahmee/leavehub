@@ -1,5 +1,5 @@
 """
-WorkForceHub HR Management System - FastAPI Backend
+LeaveHub HR Management System - FastAPI Backend
 Main application entry point
 """
 from fastapi import FastAPI, Request
@@ -82,7 +82,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="WorkForceHub API",
+    title="LeaveHub API",
     description="HR Management System API",
     version="1.0.0",
     lifespan=lifespan,
@@ -129,7 +129,7 @@ app.include_router(api_router, prefix="/api/v1")
 async def root():
     """Root endpoint"""
     return {
-        "message": "WorkForceHub API",
+        "message": "LeaveHub API",
         "version": "1.0.0",
         "docs": "/docs",
     }

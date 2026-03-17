@@ -26,10 +26,11 @@ from schemas.employee import EmployeeResponse
 router = APIRouter()
 
 
-def _base_url_for_set_password(tenant_id=None):
+def _base_url_for_set_password(tenant_id=None, tenant_slug=None):
     """Set-password link: tenant-created users go to employee portal; platform-created to main frontend."""
-    if tenant_id is not None:
-        return (getattr(settings, "EMPLOYEE_PORTAL_URL", None) or settings.FRONTEND_URL).rstrip("/")
+    if tenant_id is not None and tenant_slug:
+        base = getattr(settings, "BASE_DOMAIN", "leavehub.io")
+        return f"https://{tenant_slug}.{base}"
     return settings.FRONTEND_URL.rstrip("/")
 
 
@@ -155,7 +156,8 @@ async def admin_create_user(
     db.add(leave_balance)
     await db.commit()
 
-    base_url = _base_url_for_set_password(tenant_id)
+    tenant_slug = company_row.slug if company_row else None
+    base_url = _base_url_for_set_password(tenant_id, tenant_slug)
     set_password_url = f"{base_url}/set-password?token={token}"
 
     email_sent = send_new_user_set_password(

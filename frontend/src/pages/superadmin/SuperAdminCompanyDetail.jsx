@@ -302,20 +302,20 @@ const SuperAdminCompanyDetail = () => {
           )}
           <div className="mt-2 flex flex-wrap gap-3 text-sm">
             <a
-              href={`http://${company.slug}.localhost:5174`}
+              href={`https://${company.slug}.leavehub.io`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              Employee portal: {company.slug}.localhost:5174
+              Employee portal: {company.slug}.leavehub.io
             </a>
             <a
-              href={`http://${company.slug}.localhost:5176`}
+              href={`https://${company.slug}.leavehub.io/admin`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              Admin portal: {company.slug}.localhost:5176
+              Admin portal: {company.slug}.leavehub.io/admin
             </a>
           </div>
         </div>

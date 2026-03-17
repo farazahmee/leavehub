@@ -101,7 +101,7 @@ const Layout = () => {
           {/* Logo / User name for employees */}
           <div className="flex flex-col items-center justify-center h-16 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-center">
             <span className="text-base font-bold text-white truncate max-w-full">
-              {isEmployee && displayName ? displayName : 'WorkForceHub'}
+              {isEmployee && displayName ? displayName : 'LeaveHub'}
             </span>
             {isEmployee && summary?.employee_designation && (
               <span className="text-xs text-white/90 truncate max-w-full">{summary.employee_designation}</span>

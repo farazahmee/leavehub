@@ -4,12 +4,14 @@ import useAuthStore from '../store/authStore'
 import api from '../services/api'
 
 const Login = () => {
+  const [mode, setMode] = useState('login') // 'login' | 'forgot'
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const [tenantName, setTenantName] = useState('WorkForceHub')
+  const [tenantName, setTenantName] = useState('LeaveHub')
 
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -30,17 +32,13 @@ const Login = () => {
         const res = await api.get('/tenant/info')
         const name = res.data?.data?.name
         if (name) setTenantName(name)
-      } catch {
-        // Keep WorkForceHub fallback
-      }
+      } catch {}
     }
     fetchTenant()
   }, [])
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/', { replace: true })
-    }
+    if (isAuthenticated) navigate('/', { replace: true })
   }, [isAuthenticated, navigate])
 
   const handleSignIn = async (e) => {
@@ -56,84 +54,83 @@ const Login = () => {
     }
   }
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setLoading(true)
+    try {
+      await api.post('/auth/forgot-password', { email })
+      setSuccess('Reset link sent! Check your inbox — it may take 1-2 minutes to arrive. Also check your spam folder.')
+    } catch {
+      setError('Something went wrong. Please try again.')
+    }
+    setLoading(false)
+  }
+
+  const s = {
+    page: { minHeight: '100vh', background: '#0f1829', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' },
+    card: { width: '100%', maxWidth: '400px', background: '#1a2540', borderRadius: '16px', border: '0.5px solid #2e3f5c', padding: '2.5rem' },
+    logo: { width: '48px', height: '48px', background: '#c9a227', borderRadius: '12px', margin: '0 auto 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    title: { color: '#f0d060', fontSize: '22px', fontWeight: '500', textAlign: 'center', margin: '0 0 4px' },
+    subtitle: { color: '#7a8fad', fontSize: '14px', textAlign: 'center', margin: '0 0 2rem' },
+    label: { display: 'block', fontSize: '13px', color: '#7a8fad', marginBottom: '6px' },
+    input: { width: '100%', background: '#0f1829', border: '0.5px solid #2e3f5c', borderRadius: '8px', padding: '10px 14px', color: '#e2e8f0', fontSize: '14px', boxSizing: 'border-box', outline: 'none', marginBottom: '1.25rem' },
+    btn: { width: '100%', background: '#c9a227', border: 'none', borderRadius: '8px', padding: '11px', color: '#0f1829', fontSize: '15px', fontWeight: '500', cursor: 'pointer', marginTop: '0.5rem' },
+    btnDisabled: { opacity: 0.6, cursor: 'not-allowed' },
+    error: { background: '#2d1515', border: '0.5px solid #7a2020', color: '#f87171', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem' },
+    success: { background: '#0f2d1a', border: '0.5px solid #1a6b3a', color: '#4ade80', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem' },
+    link: { color: '#c9a227', cursor: 'pointer', background: 'none', border: 'none', fontSize: '13px', padding: 0 },
+    check: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem' },
+    checkLabel: { fontSize: '13px', color: '#7a8fad' },
+  }
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-sky-100 via-emerald-50 to-slate-100 text-slate-900">
-      {/* Decorative background shapes */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 -left-32 h-80 w-80 rounded-full bg-emerald-200/60 blur-3xl" />
-        <div className="absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-sky-200/55 blur-3xl" />
-        <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 h-[520px] w-[520px] rounded-[40%] border border-slate-200/60 bg-slate-100/60 backdrop-blur-2xl" />
-      </div>
-
-      <div className="relative flex min-h-screen items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full space-y-6 p-8 bg-white/85 border border-slate-200 rounded-2xl shadow-[0_20px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl">
-        <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">
-            {tenantName}
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to manage your company in WorkForceHub.
-          </p>
+    <div style={s.page}>
+      <div style={s.card}>
+        <div style={s.logo}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#0f1829" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
+        <h1 style={s.title}>{tenantName}</h1>
+        <p style={s.subtitle}>{mode === 'login' ? 'Sign in to manage your company' : 'Reset your password'}</p>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-            {error}
-          </div>
+        {error && <div style={s.error}>{error}</div>}
+        {success && <div style={s.success}>{success}</div>}
+
+        {mode === 'login' ? (
+          <form onSubmit={handleSignIn}>
+            <label style={s.label}>Company email</label>
+            <input style={s.input} type="email" required placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} />
+            <label style={s.label}>Password</label>
+            <input style={s.input} type="password" required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+            <div style={s.check}>
+              <input type="checkbox" id="remember" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={{ accentColor: '#c9a227' }} />
+              <label htmlFor="remember" style={s.checkLabel}>Remember me (stay signed in for 14 days)</label>
+            </div>
+            <button type="submit" style={{ ...s.btn, ...(loading ? s.btnDisabled : {}) }} disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+            <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '13px', color: '#7a8fad' }}>
+              <button style={s.link} type="button" onClick={() => { setMode('forgot'); setError(''); setSuccess('') }}>Forgot password?</button>
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={handleForgotPassword}>
+            <label style={s.label}>Company email</label>
+            <input style={s.input} type="email" required placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} />
+            <button type="submit" style={{ ...s.btn, ...(loading ? s.btnDisabled : {}) }} disabled={loading}>
+              {loading ? 'Sending...' : 'Send reset link'}
+            </button>
+            <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '13px', color: '#7a8fad' }}>
+              <button style={s.link} type="button" onClick={() => { setMode('login'); setError(''); setSuccess('') }}>Back to sign in</button>
+            </p>
+          </form>
         )}
-
-        <form onSubmit={handleSignIn} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Company email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="you@company.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="remember"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label htmlFor="remember" className="ml-2 text-sm text-gray-700">
-              Remember me (stay signed in for 14 days)
-            </label>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
       </div>
     </div>
-  </div>
   )
 }
 
 export default Login
-

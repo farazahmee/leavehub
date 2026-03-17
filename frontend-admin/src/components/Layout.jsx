@@ -69,7 +69,7 @@ const Layout = () => {
     return location.pathname.startsWith(path)
   }
 
-  const headerTitle = companyName || user?.company_name || 'WorkForceHub'
+  const headerTitle = companyName || user?.company_name || 'LeaveHub'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50/20">

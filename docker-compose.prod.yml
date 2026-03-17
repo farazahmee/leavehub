@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: leavehub_backend
+    restart: always
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8080:8080"
+    command: >
+      sh -c "uvicorn main:app --host 0.0.0.0 --port 8080 --workers 2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: leavehub_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  frontend-admin:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: leavehub_frontend_admin
+    restart: always
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+  frontend-employee:
+    build:
+      context: ./frontend-employee
+      dockerfile: Dockerfile
+    container_name: leavehub_frontend_employee
+    restart: always
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend

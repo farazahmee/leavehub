@@ -16,6 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from core.database import get_db
 from core.permissions import require_admin_or_team_lead
+from core.security import get_current_active_user
 from core.responses import SuccessResponse
 from models.user import User
 from models.role import Role, Permission, RolePermission, UserRoleAssignment
@@ -282,3 +283,19 @@ async def assign_tenant_user_roles(
       data={"user_id": user_id, "role_ids": body.role_ids},
   )
 
+@router.get("/my-permissions", response_model=SuccessResponse)
+async def get_my_permissions(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all permission codenames for the current user based on their tenant roles."""
+    result = await db.execute(
+        select(Permission.codename)
+        .join(RolePermission, Permission.id == RolePermission.permission_id)
+        .join(Role, Role.id == RolePermission.role_id)
+        .join(UserRoleAssignment, Role.id == UserRoleAssignment.role_id)
+        .where(UserRoleAssignment.user_id == current_user.id)
+        .distinct()
+    )
+    perms = [row[0] for row in result.fetchall()]
+    return SuccessResponse(message="OK", data=perms)

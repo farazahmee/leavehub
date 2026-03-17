@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../services/api'
 import { X, Megaphone } from 'lucide-react'
 
-const DISMISSED_KEY = 'workforcehub-announcements-dismissed'
+const DISMISSED_KEY = 'leavehub-announcements-dismissed'
 
 const AnnouncementBanner = () => {
+  const user = (() => { try { return JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.user } catch { return null } })()
+  if (user?.user_type === 'platform_admin') return null
   const [dismissedIds, setDismissedIds] = useState(() => {
     try {
       const s = localStorage.getItem(DISMISSED_KEY)

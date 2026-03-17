@@ -7,7 +7,7 @@ function getTenantSlugFromHost() {
   if (typeof window === 'undefined') return null
   const host = (window.location?.hostname || '').toLowerCase()
   const parts = host.split('.')
-  if (parts.length >= 2 && parts[0] !== 'www') return parts[0]
+  if (parts.length >= 3 && parts[0] !== 'www') return parts[0]
   return null
 }
 

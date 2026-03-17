@@ -2,6 +2,7 @@
 Email utilities for sending notifications
 """
 import smtplib
+import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -14,7 +15,7 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 
-def send_email(
+def send_email_sync(
     to_email: str,
     subject: str,
     body_html: str,
@@ -113,11 +114,11 @@ def send_new_user_set_password(
     set_password_url: str,
 ) -> bool:
     """Send new user welcome email with username and set-password link."""
-    subject = "Your WorkForceHub Employee Portal - Set Your Password"
+    subject = "Your LeaveHub Employee Portal - Set Your Password"
     body_text = f"""
 Hello {first_name},
 
-Your WorkForceHub employee account has been created.
+Your LeaveHub employee account has been created.
 
 Username: {username}
 
@@ -127,7 +128,7 @@ Please set your password and access the portal by clicking the link below:
 This link is valid for 7 days.
 
 Best regards,
-WorkForceHub Team
+LeaveHub Team
 """
     body_html = f"""
 <!DOCTYPE html>
@@ -142,7 +143,7 @@ WorkForceHub Team
 </style></head>
 <body>
 <div class="container">
-  <h2>Welcome to WorkForceHub</h2>
+  <h2>Welcome to LeaveHub</h2>
   <p>Hello {first_name},</p>
   <p>Your employee portal account has been created.</p>
   <div class="card">
@@ -151,7 +152,7 @@ WorkForceHub Team
     <a href="{set_password_url}" class="btn">Set Password &amp; Access Portal</a>
     <p class="note">This link is valid for 7 days.</p>
   </div>
-  <p>Best regards,<br>WorkForceHub Team</p>
+  <p>Best regards,<br>LeaveHub Team</p>
 </div>
 </body>
 </html>
@@ -167,11 +168,11 @@ def send_new_user_credentials(
     login_url: str = "http://localhost:5174/login",
 ) -> bool:
     """Send new user credentials to employee email."""
-    subject = "Your WorkForceHub Account"
+    subject = "Your LeaveHub Account"
     body_text = f"""
 Hello {first_name},
 
-Your WorkForceHub account has been created.
+Your LeaveHub account has been created.
 
 Username: {username}
 Password: {password}
@@ -180,7 +181,7 @@ Please log in at: {login_url}
 We recommend changing your password after first login.
 
 Best regards,
-WorkForceHub Team
+LeaveHub Team
 """
     body_html = f"""
 <!DOCTYPE html>
@@ -197,18 +198,18 @@ WorkForceHub Team
 </style></head>
 <body>
 <div class="container">
-  <h2>Welcome to WorkForceHub</h2>
+  <h2>Welcome to LeaveHub</h2>
   <p>Hello {first_name},</p>
-  <p>Your WorkForceHub account has been created.</p>
+  <p>Your LeaveHub account has been created.</p>
   <div class="card">
     <div class="credentials">
       <p><span class="label">Username:</span> <span class="value">{username}</span></p>
       <p><span class="label">Password:</span> <span class="value">{password}</span></p>
     </div>
-    <a href="{login_url}" class="btn">Log in to WorkForceHub</a>
+    <a href="{login_url}" class="btn">Log in to LeaveHub</a>
     <p class="warning">We recommend changing your password after your first login.</p>
   </div>
-  <p>Best regards,<br>WorkForceHub Team</p>
+  <p>Best regards,<br>LeaveHub Team</p>
 </div>
 </body>
 </html>
@@ -233,7 +234,7 @@ Dear {employee_name},
 Please find your {letter_type.replace('_', ' ')} letter attached as a PDF file.
 
 Best regards,
-WorkForceHub HR Team
+LeaveHub HR Team
 """
     body_html = f"""
 <!DOCTYPE html>
@@ -246,7 +247,7 @@ WorkForceHub HR Team
 <div class="container">
   <p>Dear {employee_name},</p>
   <p>Please find your <strong>{letter_type.replace('_', ' ').title()}</strong> letter attached as a PDF file.</p>
-  <p style="margin-top: 24px;">Best regards,<br>WorkForceHub HR Team</p>
+  <p style="margin-top: 24px;">Best regards,<br>LeaveHub HR Team</p>
 </div>
 </body>
 </html>
@@ -259,12 +260,23 @@ WorkForceHub HR Team
         return send_email(to_email, subject, body_html, body_text, attachments=attachments)
     except Exception as e:
         logger.warning(f"PDF generation failed, falling back to text: {e}")
-        body_text_fallback = f"Dear {employee_name},\n\n{content}\n\nBest regards,\nWorkForceHub HR Team"
+        body_text_fallback = f"Dear {employee_name},\n\n{content}\n\nBest regards,\nLeaveHub HR Team"
         body_html_fallback = f"""
 <!DOCTYPE html><html><body>
 <p>Dear {employee_name},</p>
 <pre style="white-space: pre-wrap; font-family: Arial;">{content.replace('<', '&lt;').replace('>', '&gt;')}</pre>
-<p>Best regards,<br>WorkForceHub HR Team</p>
+<p>Best regards,<br>LeaveHub HR Team</p>
 </body></html>
 """
         return send_email(to_email, subject, body_html_fallback, body_text_fallback)
+
+def send_email(to_email: str, subject: str, body: str, html_body: str = None, attachments=None) -> bool:
+    """Send email in background thread to avoid blocking requests."""
+    def _send():
+        try:
+            send_email_sync(to_email, subject, body, html_body, attachments=attachments)
+        except Exception as e:
+            logger.error(f"Background email error: {e}")
+    thread = threading.Thread(target=_send, daemon=True)
+    thread.start()
+    return True

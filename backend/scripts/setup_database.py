@@ -151,7 +151,7 @@ async def create_admin_user():
 async def setup_database():
     """Main setup function"""
     print("=" * 60)
-    print("WorkForceHub Database Setup")
+    print("LeaveHub Database Setup")
     print("=" * 60)
     print()
     

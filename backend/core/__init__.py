@@ -1,1 +1,1 @@
-"""Core module for WorkForceHub backend"""
+"""Core module for LeaveHub backend"""

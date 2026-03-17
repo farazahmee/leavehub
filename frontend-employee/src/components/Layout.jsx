@@ -18,9 +18,30 @@ const Layout = () => {
   const location = useLocation()
   const { user, token, fetchUser, logout } = useAuthStore()
 
+  // Redirect company admin to admin portal
   useEffect(() => {
-    if (token && !user) fetchUser()
-  }, [token, user, fetchUser])
+    const roles = user?.tenant_roles || []
+    if (roles.includes('Company Admin')) {
+      window.location.href = 'https://leavehub.io/admin/'
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (token) fetchUser()
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    // Refresh user roles every 30 seconds
+    const interval = setInterval(() => fetchUser(), 30000)
+    // Also refresh when window gets focus
+    const onFocus = () => fetchUser()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [token, fetchUser])
 
   const { data: summary } = useQuery({
     queryKey: ['dashboard-summary'],
@@ -30,19 +51,37 @@ const Layout = () => {
     },
     enabled: !!token,
   })
-  const tenantName = user?.company_name || 'WorkForceHub'
+  const tenantName = user?.company_name || 'LeaveHub'
   const displayName = summary?.employee_name || user?.username || 'Employee'
   const displayDesignation = summary?.employee_designation || ''
 
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Teams', href: '/teams', icon: UserCog },
-    { name: 'Leave Requests', href: '/leave', icon: Calendar },
-    { name: 'Documents', href: '/documents', icon: FileText },
-    { name: 'Salary Slip', href: '/payroll', icon: DollarSign },
-    { name: 'Personal Information', href: '/personal', icon: User },
+  const { data: userPermissions = null } = useQuery({
+    queryKey: ['employee-permissions', user?.id],
+    queryFn: async () => {
+      const res = await api.get('/roles/my-permissions')
+      return res.data?.data || []
+    },
+    enabled: !!token,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+  })
+
+  const allNav = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard, always: true },
+    { name: 'Teams', href: '/teams', icon: UserCog, perms: ['manage_teams', 'manage_employees'] },
+    { name: 'Leave Requests', href: '/leave', icon: Calendar, perms: ['manage_leave', 'approve_requests'] },
+    { name: 'Documents', href: '/documents', icon: FileText, perms: ['upload_documents', 'manage_employees'] },
+    { name: 'Salary Slip', href: '/payroll', icon: DollarSign, perms: ['manage_payroll', 'view_reports'] },
+    { name: 'Personal Information', href: '/personal', icon: User, always: true },
   ]
 
+  const navigation = allNav.filter(item => {
+    if (item.always) return true
+    if (userPermissions === null) return true
+    if (userPermissions.length === 0) return true
+    if (!item.perms) return true
+    return item.perms.some(p => userPermissions.includes(p))
+  })
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/'
     return location.pathname.startsWith(path)
